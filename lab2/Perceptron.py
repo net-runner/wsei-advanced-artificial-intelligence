@@ -1,7 +1,8 @@
 import numpy as np
 
+
 class Perceptron:
-     # Inicjalizator, ustawiający atrybut self.w oraz self.b jako wektor losowych wag, n ilość sygnałów wejściowych (bias)
+    # Inicjalizator, ustawiający atrybut self.w oraz self.b jako wektor losowych wag, n ilość sygnałów wejściowych (bias)
     def __init__(self, n, bias=True):
         self.w = np.random.rand(n)
         self.b = 1.0 if bias else 0.0
@@ -20,19 +21,16 @@ class Perceptron:
             errors = 0
             for x, desired in zip(xx, d):
                 prediction = self.predict(x)
-
-
                 if prediction != desired:
                     error = desired - prediction
-
                     if prediction == 0 and desired == 1:
                         self.w += eta * np.array(x)
                         self.b += eta
                     elif prediction == 1 and desired == 0:
                         self.w -= eta * np.array(x)
                         self.b -= eta
-
                     errors += 1
+            print(f"Epoka {t}, misklasyfikacja: {errors}")
             if errors <= tol:
                 break
             t += 1
