@@ -9,12 +9,11 @@ import tensorflow as tf
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 
-
 IMAGE_SIZE = 64
-IMAGE_CHANNELS = 3  
+IMAGE_CHANNELS = 3
+NOISE_DIM = 100  # Dodano definicję NOISE_DIM
 
 image_files = [os.path.join('cats', file) for file in os.listdir('cats') if file.endswith(('png', 'jpg', 'jpeg'))]
-
 
 training_data = []
 
@@ -26,7 +25,6 @@ for file in image_files:
 # Konwersja do tablicy NumPy i normalizacja
 training_data = np.array(training_data)
 training_data = (training_data - 127.5) / 127.5  # Normalizacja do przedziału [-1, 1]
-
 
 def build_discriminator():
     model = Sequential()
@@ -52,7 +50,7 @@ def build_discriminator():
 def build_generator():
     model = Sequential()
 
-    model.add(Dense(8 * 8 * 256, activation='relu', input_dim=100))  # Wektor losowego szumu o wymiarze 100
+    model.add(Dense(8 * 8 * 256, activation='relu', input_dim=NOISE_DIM))  # Użycie NOISE_DIM
     model.add(Reshape((8, 8, 256)))
 
     model.add(Conv2DTranspose(256, kernel_size=5, strides=2, padding='same'))
@@ -80,7 +78,7 @@ generator = build_generator()
 # W modelu GAN tylko generator jest trenowany
 discriminator.trainable = False
 
-gan_input = Input(shape=(100,))
+gan_input = Input(shape=(NOISE_DIM,))
 generated_image = generator(gan_input)
 gan_output = discriminator(generated_image)
 
@@ -123,7 +121,7 @@ for epoch in range(EPOCHS):
     real_images = training_data[idx]
 
     # Generowanie losowych szumów i tworzenie fałszywych obrazów
-    noise = np.random.normal(0, 1, (BATCH_SIZE, 100))
+    noise = np.random.normal(0, 1, (BATCH_SIZE, NOISE_DIM))
     fake_images = generator.predict(noise)
 
     # Trenowanie dyskryminatora
@@ -131,21 +129,20 @@ for epoch in range(EPOCHS):
     d_loss_fake = discriminator.train_on_batch(fake_images, fake)
     d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
 
-
     # Generowanie losowych szumów
-    noise = np.random.normal(0, 1, (BATCH_SIZE, 100))
+    noise = np.random.normal(0, 1, (BATCH_SIZE, NOISE_DIM))
 
     # Trenowanie generatora poprzez maksymalizację błędu dyskryminatora na fałszywych obrazach
     g_loss = gan.train_on_batch(noise, real)
 
     # Wyświetlanie postępu
     if (epoch + 1) % SAMPLE_INTERVAL == 0:
-        print(f"{epoch + 1}/{EPOCHS}, D Loss: {d_loss[0]}, D Acc.: {100 * d_loss[1]}, G Loss: {g_loss}")
+        print(f"{epoch + 1}/{EPOCHS}, D Loss: {d_loss[0]}, D Acc.: {100 * d_loss[1]:.2f}%, G Loss: {g_loss}")
         # Zapisywanie wygenerowanych obrazów
         sample_images(generator, epoch + 1)
 
 # Generowanie nowych obrazów po treningu
-noise = np.random.normal(0, 1, (1, 100))
+noise = np.random.normal(0, 1, (1, NOISE_DIM))
 generated_image = generator.predict(noise)
 
 # Skalowanie i wyświetlenie obrazu
